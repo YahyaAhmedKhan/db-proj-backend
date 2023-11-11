@@ -9,6 +9,7 @@ app.use(express.json()) // This is the line you're probably missing.
 // Define a port
 
 app.use(morgan('dev'))
+
 // A simple middleware that logs the request method and URL
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`)
