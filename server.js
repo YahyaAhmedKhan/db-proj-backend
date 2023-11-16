@@ -1,10 +1,15 @@
 const express = require('express')
 const app = express()
+const cors = require('cors')
+const cookieParser = require('cookie-parser')
+
 const morgan = require('morgan')
 const config = require('./config')
 const routes = require('./routes')
 
-app.use(express.json()) // This is the line you're probably missing.
+app.use(cookieParser())
+app.use(express.json())
+app.use(cors())
 
 // Define a port
 
@@ -24,7 +29,7 @@ app.use(routes)
 
 // Define a simple route
 app.get('/', (req, res) => {
-  // assa
+  // res.cookie('test')
   res.send('Hello, World!')
 })
 

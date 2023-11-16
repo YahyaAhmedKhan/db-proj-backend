@@ -1,6 +1,5 @@
 const express = require('express')
 const router = express.Router()
-console.log('asdasds')
 const db = require('../db') // Adjust the path as necessary
 
 // Route to get all accounts
@@ -32,6 +31,7 @@ router.get('/:id', async (req, res) => {
 // Route to create a new account
 router.post('/', async (req, res) => {
   try {
+    console.log(req.body)
     const { email, password } = req.body
     const newAccount = await db.query(
       'INSERT INTO accounts (email, password) VALUES ($1, $2) RETURNING *',
