@@ -33,6 +33,11 @@ app.get('/', (req, res) => {
   res.send('Hello, World!')
 })
 
+app.get('/version', (req, res) => {
+  // res.cookie('test')
+  res.send('1.0.0')
+})
+
 // Start the server
 app.listen(config.port, () => {
   console.log(`Server is running on port ${config.port} link : http://localhost:5000`)
