@@ -3,20 +3,33 @@ const db = require('../db') // Adjust the path as necessary
 
 const router = express()
 
-async function insertFlightBooking (totalSeats, flightRecordId) {
+router.post('/addFlightbooking', async (req, res) => {
   try {
-    const flightBooking = await db.one(
-      'INSERT INTO flight_bookings (total_seats, total_price, account_id, flight_record_id) VALUES ($1, $2, $3, $4) RETURNING flight_booking_id',
-      [totalSeats, 0, 0, flightRecordId]
-    )
+    const { accountId, flightRecordId } = req.body
+    const insertedFlightBooking = await insertFlightBooking(accountId, flightRecordId)
+    res.status(200).json(insertedFlightBooking) // Send the inserted row as JSON response
+  } catch (error) {
+    console.error('Error adding flight booking:', error)
+    res.sendStatus(500)
+  }
+})
 
-    return flightBooking.flight_booking_id
+async function insertFlightBooking (accountId, flightRecordId) {
+  try {
+    const flightBooking = await db.query(
+      'INSERT INTO flight_bookings (total_seats, total_price, account_id, flight_record_id) VALUES ($1, $2, $3, $4) RETURNING *',
+      [0, 0, accountId, flightRecordId]
+    )
+    // flightBooking.rows[0] contains the newly inserted row
+    const insertedFlightBooking = flightBooking.rows[0]
+
+    console.log('Inserted flight booking:', insertedFlightBooking)
+    return insertedFlightBooking
   } catch (error) {
     console.error('Error inserting flight booking:', error)
     throw error
   }
 }
-
 async function insertSeatBooking (flightBookingId, passenger) {
   try {
     const {
@@ -124,4 +137,4 @@ const generateRandomSeatNumber = () => {
   return `${randomLetter}${randomDigits}`
 }
 
-bookFlightAndSeats(totalSeats, flightBookingId, flightRecordDate, passengers)
+module.exports = router
