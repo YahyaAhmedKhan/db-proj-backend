@@ -19,6 +19,37 @@ router.post('/', async (req, res) => {
   }
 })
 
+router.post('/:flightId', async (req, res) => {
+  try {
+    const { flightId } = req.params
+    console.log(flightId)
+
+    const flightResults = await searchFlightById(flightId)
+
+    res.json(flightResults)
+  } catch (err) {
+    console.error('Error occurred while searching for flights')
+    console.error(err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
+async function searchFlightById (flightId) {
+  try {
+    const query = `
+      SELECT f.*
+      FROM flights AS f
+      WHERE f.flight_id = $1;
+    `
+    const result = await db.query(query, [flightId])
+
+    return result.rows
+  } catch (error) {
+    console.error('Error executing SQL query:', error)
+    throw error
+  }
+}
+
 async function searchFlights (origin, destination, date) {
   try {
     const query = `

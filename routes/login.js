@@ -17,7 +17,7 @@ router.post('/', async (req, res) => {
     const token = jwt.sign({ accountId }, secretKey, { expiresIn: '1h' })
 
     res.cookie('jwt', token, { httpOnly: false, sameSite: 'none' })
-    res.status(200).json({ msg: 'Login successful', token })
+    res.status(200).json({ msg: 'Login successful', token, email, password })
   }
   if (message === 'Invalid email') {
     res.status(401).json({ msg: 'Invalid email' })
