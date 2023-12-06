@@ -71,7 +71,7 @@ async function searchFlights (origin, destination, date) {
       `
 
     const result = await db.query(query, [origin, destination, date])
-
+    console.log(result.rows)
     return result.rows
   } catch (error) {
     console.error('Error executing SQL query:', error)

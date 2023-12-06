@@ -3,16 +3,41 @@ const db = require('../db') // Adjust the path as necessary
 
 const router = express()
 
-router.post('/addFlightbooking', async (req, res) => {
+// router.post('/addFlightbooking', async (req, res) => {
+//   try {
+//     const { accountId, flightRecordId } = req.body
+//     const insertedFlightBooking = await insertFlightBooking(accountId, flightRecordId)
+//     res.status(200).json(insertedFlightBooking) // Send the inserted row as JSON response
+//   } catch (error) {
+//     console.error('Error adding flight booking:', error)
+//     res.sendStatus(500)
+//   }
+// })
+
+router.post('/makeBooking', async (req, res) => {
   try {
-    const { accountId, flightRecordId } = req.body
-    const insertedFlightBooking = await insertFlightBooking(accountId, flightRecordId)
-    res.status(200).json(insertedFlightBooking) // Send the inserted row as JSON response
+    const { accountId, flightRecordId, passengerDetails } = req.body
+    const flightResults = await makeBooking(accountId, flightRecordId, passengerDetails)
+    res.status(200).json(flightResults) // Send the inserted row as JSON response
   } catch (error) {
     console.error('Error adding flight booking:', error)
     res.sendStatus(500)
   }
-})
+}
+)
+
+async function makeBooking (accountId, flightRecordId, passengerDetails) {
+  const flightBooking = await insertFlightBooking(accountId, flightRecordId)
+  const flightBookingId = flightBooking.flight_booking_id
+
+  const seatBookings = []
+  for (let i = 0; i < passengerDetails.length; i++) {
+    const seatBooking = await insertSeatBooking(passengerDetails[i], flightBookingId, i + 1)
+    seatBookings.push(seatBooking)
+  }
+
+  return [flightBooking, seatBookings]
+}
 
 async function insertFlightBooking (accountId, flightRecordId) {
   try {
@@ -30,100 +55,65 @@ async function insertFlightBooking (accountId, flightRecordId) {
     throw error
   }
 }
-async function insertSeatBooking (flightBookingId, passenger) {
+
+// router.post('/addSeatbooking', async (req, res) => {
+//   try {
+//     const { seatDeatils, flightBookingId, seatBookingNumber } = req.body
+//     const insertedSeatBooking = await insertSeatBooking(seatDeatils, flightBookingId, seatBookingNumber)
+//     res.status(200).json(insertedSeatBooking) // Send the inserted row as JSON response
+//   } catch (error) {
+//     console.error('Error adding seat booking:', error)
+//     res.sendStatus(500)
+//   }
+// })
+
+async function insertSeatBooking (seatDeatils, flightBookingId, seatBookingNumber) {
+  const seatNumber = generateRandomSeatNumber()
+  const { firstName, lastName, gender, passportNumber, dateOfBirth, nationality, seatClass, specialNeeds, extraBaggage, price } = seatDeatils
+
   try {
-    const {
-      seatBookingNumber,
-      firstName,
-      lastName,
-      gender,
-      passportNumber,
-      dateOfBirth,
-      nationality,
-      seatClass,
-      specialNeeds,
-      extraBaggage,
-      price
-    } = passenger
-
-    const seatNumber = generateRandomSeatNumber()
-    console.log(seatNumber) // Example output: "A42"
-
-    await db.none(
-      'INSERT INTO seat_bookings (flight_booking_id, seat_booking_number, seat_number, first_name, last_name, gender, passport_number, date_of_birth, nationality, seat_class, special_needs, extra_baggage, price) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)',
-      [
-        flightBookingId,
-        seatBookingNumber,
-        seatNumber,
-        firstName,
-        lastName,
-        gender,
-        passportNumber,
-        dateOfBirth,
-        nationality,
-        seatClass,
-        specialNeeds,
-        extraBaggage,
-        price
-      ]
+    const seatBooking = await db.query(
+        `INSERT INTO seat_bookings (
+          flight_booking_id,
+          seat_booking_number,
+          seat_number,
+          first_name,
+          last_name,
+          gender,
+          passport_number,
+          date_of_birth,
+          nationality,
+          seat_class,
+          special_needs,
+          extra_baggage,
+          price
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        RETURNING *`,
+        [
+          flightBookingId,
+          seatBookingNumber,
+          seatNumber,
+          firstName,
+          lastName,
+          gender,
+          passportNumber,
+          dateOfBirth,
+          nationality,
+          seatClass,
+          specialNeeds,
+          extraBaggage,
+          price
+        ]
     )
+
+    console.log('Inserted seat booking:', seatBooking.rows[0])
+
+    return seatBooking.rows[0]
   } catch (error) {
     console.error('Error inserting seat booking:', error)
     throw error
   }
 }
-
-async function bookFlightAndSeats (totalSeats, flightRecordId, flightRecordDate, passengers) {
-  try {
-    // 1. Insert flight booking record
-    const flightBookingId = await insertFlightBooking(totalSeats, flightRecordId)
-
-    // 2. Insert seat bookings for each passenger
-    const seatBookingPromises = passengers.map((passenger, index) => {
-      return insertSeatBooking(flightBookingId, passenger)
-    })
-
-    await Promise.all(seatBookingPromises)
-
-    console.log('Flight booking and seat bookings successfully completed')
-  } catch (error) {
-    console.error('Error:', error)
-  }
-}
-
-// Example usage of the function
-const totalSeats = 2 // Replace with the actual total seats
-const flightBookingId = 1 // Replace with the actual flight booking ID
-const flightRecordDate = '2023-12-31' // Replace with the actual date of the flight record
-
-const passengers = [
-  {
-    seatBookingNumber: 1,
-    firstName: 'John',
-    lastName: 'Doe',
-    gender: 'M',
-    passportNumber: 'US123456',
-    dateOfBirth: '1990-01-15',
-    nationality: 'USA',
-    seatClass: 'economy',
-    specialNeeds: false,
-    extraBaggage: false,
-    price: 300.00
-  },
-  {
-    seatBookingNumber: 2,
-    firstName: 'Jane',
-    lastName: 'Smith',
-    gender: 'F',
-    passportNumber: 'CA789012',
-    dateOfBirth: '1985-07-20',
-    nationality: 'Canada',
-    seatClass: 'business',
-    specialNeeds: true,
-    extraBaggage: true,
-    price: 500.00
-  }
-]
 
 const generateRandomSeatNumber = () => {
   const getRandomChar = (min, max) => {
